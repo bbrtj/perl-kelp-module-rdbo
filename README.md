@@ -1,4 +1,4 @@
-kelp-module-template-rdbo
+kelp-module-rdbo
 =========================
 
 Kelp module for Rose::DB::Object
