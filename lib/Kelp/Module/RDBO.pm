@@ -93,7 +93,7 @@ Kelp::Module::RDBO - Kelp interface to Rose::DB::Object
     sub get_song {
         my ( $self, $song_id ) = @_;
         $self->rdb->do_transaction( ... )
-        my $song = $self->rdbo('Songs')->new( id => $song_id  )->load;
+        my $song = $self->rdbo('Song')->new( id => $song_id  )->load;
     }
 
 =head1 DESCRIPTION
@@ -125,9 +125,9 @@ A helper method, which prepares and returns a L<Rose::DB::Object> child class.
 
 Under the hood, the C<rdbo> method looks for C<MyApp::DB::Author>, assuming
 that the name of your application is C<MyApp>. A different prefix may be
-specified via the L</prefix> configuration option. Then, the module is loaded
+specified via the L</prefix> configuration option. Then, the module is loaded,
 and if it does not have its own C<init_db> method, one is injected into it,
-returning the already initialized C<Rose::DB> object.
+containing the already initialized C<Rose::DB> object.
 
 To understand the full benefit of this method, one should first make themselves
 familiar with how RDBO objects are initialized. The RDBO docs provide several
@@ -135,7 +135,7 @@ ways to do that. One of them is to pass a C<db> parameter to each constructor.
 
     my $item = MyDB::Item->new( db => ... );
 
-If the C<db> parameter is missing, RDBO will look for a C<init_db> method. The
+If the C<db> parameter is missing, RDBO will look for an C<init_db> method. The
 C<rdbo> method described here initializes that behind the scenes, so you don't
 have to worry about any of the above.
 
@@ -215,13 +215,38 @@ RDBO classes under the specified L</prefix> at startup. It is advised that
 you have this option on in your deployment config.
 
 Preloading all modules may cause a noticeable delay after restarting the web
-application. If you are impatient and hate waiting for your application to
+application. If you are impatient and dislike waiting for your application to
 restart (like the author of this module), you are advised to set this option
-to 0 in your development config.
+to a false value in your development config.
+
+=head1 LINK BACK TO APP
+
+This module injects a new method C<app> into C<Rose::DB::Object>, making
+it available to all deriving classes. This method is a reference to the application
+instance, and it can be accessed by all object classes that inherit from
+C<Rose::DB::Object>. A typical example of when this is useful is when you want
+to use other modules initialized by your app inside an object class.
+The following example uses the L<Kelp::Module::Bcrypt> module to bcrypt the
+user password:
+
+    package MyApp::DB::User;
+
+    __PACKAGE__->meta->setup(
+        table => 'users',
+        auto  => 1,
+    );
+
+    # Add a triger to column 'password' to bcrypt it when it's being set.
+    __PACKAGE__->meta->column('password')->add_trigger(
+        on_set => sub {
+            my $self = shift;
+            $self->password( $self->app->bcrypt( $self->password ) );
+        }
+    );
 
 =head1 AUTHOR
 
-Stefan G. minimal <at> cpan.org
+Stefan G. minimal E<lt>atE<gt> cpan.org
 
 =head1 SEE ALSO
 
