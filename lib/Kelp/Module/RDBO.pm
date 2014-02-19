@@ -61,7 +61,7 @@ __END__
 
 =pod
 
-=head1 TITLE
+=head1 NAME
 
 Kelp::Module::RDBO - Kelp interface to Rose::DB::Object
 
