@@ -6,7 +6,7 @@ use Plack::Util;
 use Class::Inspector;
 use Module::Find;
 
-our $VERSION = 0.105;
+our $VERSION = 0.106;
 
 sub build {
     my ( $self, %args ) = @_;
