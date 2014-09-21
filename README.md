@@ -1,4 +1,4 @@
-# TITLE
+# NAME
 
 Kelp::Module::RDBO - Kelp interface to Rose::DB::Object
 
@@ -10,12 +10,20 @@ Kelp::Module::RDBO - Kelp interface to Rose::DB::Object
     modules      => [qw/RDBO/],
     modules_init => {
         RDBO => {
-            prefix       => 'MyApp::DB',
-            default_type => 'main',
-            source       => [
+            prefix         => 'MyApp::DB',
+            default_domain => 'development',
+            default_type   => 'main',
+            source         => [
                 {
-                    type     => 'main',
-                    driver   => 'mysql',
+                    domain => 'development',
+                    type   => 'main',
+                    driver => 'mysql',
+                    ...
+                },
+                {
+                    domain => 'development',
+                    type   => 'readonly',
+                    driver => 'mysql',
                     ...
                 }
             ],
@@ -37,9 +45,9 @@ sub get_song {
 
 # DESCRIPTION
 
-This [Kelp](http://search.cpan.org/perldoc?Kelp) module creates a [Rose::DB](http://search.cpan.org/perldoc?Rose::DB) connection at application startup,
+This [Kelp](https://metacpan.org/pod/Kelp) module creates a [Rose::DB](https://metacpan.org/pod/Rose::DB) connection at application startup,
 provides an interface to it, and uses it behind the scenes to pass it to all
-[Rose::DB::Object](http://search.cpan.org/perldoc?Rose::DB::Object) derived objects. This way, the application developer
+[Rose::DB::Object](https://metacpan.org/pod/Rose::DB::Object) derived objects. This way, the application developer
 doesn't have to worry about passing a database object to each new RDBO instance.
 
 # REGISTERED METHODS
@@ -48,15 +56,22 @@ This module registers the following methods into your application:
 
 ## rdb
 
-A reference to an initialized [Rose::DB](http://search.cpan.org/perldoc?Rose::DB) database object.
+A reference to the default [Rose::DB](https://metacpan.org/pod/Rose::DB) database object.
 
 ```perl
 $self->rdb->do_transaction(sub{ ... });
 ```
 
+To access a database of different type or domain, use parameters:
+
+```perl
+my $db = $self->rdb( domain => 'production', type => 'readonly' );
+$db->do_transaction( sub { ... } );
+```
+
 ## rdbo
 
-A helper method, which prepares and returns a [Rose::DB::Object](http://search.cpan.org/perldoc?Rose::DB::Object) child class.
+A helper method, which prepares and returns a [Rose::DB::Object](https://metacpan.org/pod/Rose::DB::Object) child class.
 
 ```perl
 get '/author/:id' => sub {
@@ -84,6 +99,14 @@ If the `db` parameter is missing, RDBO will look for an `init_db` method. The
 `rdbo` method described here initializes that behind the scenes, so you don't
 have to worry about any of the above.
 
+To access a database of different type or domain, use parameters:
+
+```perl
+my $author = $self->rdbo('Author', type => 'readonly')
+                  ->new( id => $author_id )
+                  ->load;
+```
+
 # CONFIGURATION
 
 The configuration of this module is very robust, and as such it may seem a bit
@@ -92,7 +115,7 @@ complicated in the beginning. Here is a list of all keys used:
 ## source
 
 Source is a hashref or an array of hashrefs, containing arguments for the
-["register\_db" in Rose::DB](http://search.cpan.org/perldoc?Rose::DB#register\_db) method. To give you an example, directly copied from
+["register\_db" in Rose::DB](https://metacpan.org/pod/Rose::DB#register_db) method. To give you an example, directly copied from
 the RDB docs:
 
 ```perl
@@ -127,11 +150,11 @@ If you only have a single source, you may use a hashref as the `source` value.
 
 ## default\_type
 
-Specifies a value for ["default\_type" in Rose::DB](http://search.cpan.org/perldoc?Rose::DB#default\_type).
+Specifies a value for ["default\_type" in Rose::DB](https://metacpan.org/pod/Rose::DB#default_type).
 
 ## default\_domain
 
-Specifies a value for ["default\_domain" in Rose::DB](http://search.cpan.org/perldoc?Rose::DB#default\_domain).
+Specifies a value for ["default\_domain" in Rose::DB](https://metacpan.org/pod/Rose::DB#default_domain).
 
 ```perl
 modules_init => {
@@ -177,7 +200,7 @@ it available to all deriving classes. This method is a reference to the applicat
 instance, and it can be accessed by all object classes that inherit from
 `Rose::DB::Object`. A typical example of when this is useful is when you want
 to use other modules initialized by your app inside an object class.
-The following example uses the [Kelp::Module::Bcrypt](http://search.cpan.org/perldoc?Kelp::Module::Bcrypt) module to bcrypt the
+The following example uses the [Kelp::Module::Bcrypt](https://metacpan.org/pod/Kelp::Module::Bcrypt) module to bcrypt the
 user password:
 
 ```perl
@@ -203,7 +226,7 @@ Stefan G. minimal <at> cpan.org
 
 # SEE ALSO
 
-[Kelp](http://search.cpan.org/perldoc?Kelp), [Rose::DB](http://search.cpan.org/perldoc?Rose::DB), [Rose::DB::Object](http://search.cpan.org/perldoc?Rose::DB::Object)
+[Kelp](https://metacpan.org/pod/Kelp), [Rose::DB](https://metacpan.org/pod/Rose::DB), [Rose::DB::Object](https://metacpan.org/pod/Rose::DB::Object)
 
 # LICENSE
 
