@@ -1,6 +1,7 @@
 use File::Temp 'tempfile';
 
-my ( $fh, $tempfile ) = tempfile();
+my ( $fh,  $tempfile )  = tempfile();
+my ( $fh2, $tempfile2 ) = tempfile();
 
 {
     modules      => [qw/RDBO/],
@@ -13,6 +14,11 @@ my ( $fh, $tempfile ) = tempfile();
                     type     => 'main',
                     driver   => 'SQLite',
                     database => $tempfile
+                },
+                {
+                    type     => 'other',
+                    driver   => 'SQLite',
+                    database => $tempfile2
                 }
             ],
         },

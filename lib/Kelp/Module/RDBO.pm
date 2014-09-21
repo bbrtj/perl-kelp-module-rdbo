@@ -5,8 +5,9 @@ use Rose::DB::Object;
 use Plack::Util;
 use Class::Inspector;
 use Module::Find;
+use Digest::MD5 'md5_base64';
 
-our $VERSION = 0.106;
+our $VERSION = 0.205;
 
 sub build {
     my ( $self, %args ) = @_;
@@ -32,10 +33,26 @@ sub build {
         useall $args{prefix};
     }
 
+    # Parameters and cache for the rdb closure
+    my %rdb_cache  = ();
+    my @rdb_params = ();
+    my $rdb_code = sub {
+        my $key = md5_base64( join( ':', @rdb_params ) );
+        my $db = $rdb_cache{$key} //= Rose::DB->new(@rdb_params);
+        @rdb_params = ();
+        return $db;
+    };
+
     $self->register(
-        rdb  => Rose::DB->new,
+        rdb => sub {
+            shift;
+            @rdb_params = @_;
+            return $rdb_code->();
+        },
+
         rdbo => sub {
-            my ( $app, $name ) = @_;
+            my ( $app, $name, @params ) = @_;
+            @rdb_params = @params;
 
             # Load the class
             my $full_name = $args{prefix} . '::' . $name;
@@ -46,8 +63,7 @@ sub build {
 
             # Insert an init_db method, if none found
             my $glob = "${class}::init_db";
-            *{$glob} = sub { $app->rdb }
-              unless ( *{$glob}{CODE} );
+            *{$glob} = $rdb_code unless ( *{$glob}{CODE} );
 
             # Return class only
             return $class;
@@ -72,12 +88,20 @@ Kelp::Module::RDBO - Kelp interface to Rose::DB::Object
         modules      => [qw/RDBO/],
         modules_init => {
             RDBO => {
-                prefix       => 'MyApp::DB',
-                default_type => 'main',
-                source       => [
+                prefix         => 'MyApp::DB',
+                default_domain => 'development',
+                default_type   => 'main',
+                source         => [
                     {
-                        type     => 'main',
-                        driver   => 'mysql',
+                        domain => 'development',
+                        type   => 'main',
+                        driver => 'mysql',
+                        ...
+                    },
+                    {
+                        domain => 'development',
+                        type   => 'readonly',
+                        driver => 'mysql',
                         ...
                     }
                 ],
@@ -109,9 +133,14 @@ This module registers the following methods into your application:
 
 =head2 rdb
 
-A reference to an initialized L<Rose::DB> database object.
+A reference to the default L<Rose::DB> database object.
 
     $self->rdb->do_transaction(sub{ ... });
+
+To access a database of different type or domain, use parameters:
+
+    my $db = $self->rdb( domain => 'production', type => 'readonly' );
+    $db->do_transaction( sub { ... } );
 
 =head2 rdbo
 
@@ -138,6 +167,12 @@ ways to do that. One of them is to pass a C<db> parameter to each constructor.
 If the C<db> parameter is missing, RDBO will look for an C<init_db> method. The
 C<rdbo> method described here initializes that behind the scenes, so you don't
 have to worry about any of the above.
+
+To access a database of different type or domain, use parameters:
+
+    my $author = $self->rdbo('Author', type => 'readonly')
+                      ->new( id => $author_id )
+                      ->load;
 
 =head1 CONFIGURATION
 
